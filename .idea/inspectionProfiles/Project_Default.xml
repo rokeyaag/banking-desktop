@@ -1,0 +1,41 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="djangorestframework" />
+          <option value="django-cors-headers" />
+          <option value="psycopg2-binary" />
+          <option value="Pillow" />
+          <option value="groq" />
+          <option value="ollama" />
+          <option value="openai" />
+          <option value="twilio" />
+          <option value="requests" />
+          <option value="reportlab" />
+          <option value="weasyprint" />
+          <option value="xhtml2pdf" />
+          <option value="celery" />
+          <option value="redis" />
+          <option value="django-celery-beat" />
+          <option value="channels-redis" />
+          <option value="openpyxl" />
+          <option value="xlwt" />
+          <option value="django-crispy-forms" />
+          <option value="crispy-bootstrap5" />
+          <option value="django-widget-tweaks" />
+          <option value="django-allauth" />
+          <option value="django-chartjs" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="backend.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

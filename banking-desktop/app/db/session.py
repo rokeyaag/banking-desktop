@@ -102,7 +102,12 @@ def _auto_seed_demo_user():
     except Exception as e:
         _log.warning(f"Demo user auto-seed notice: {e}")
 
+_initialized = False
+
 def init_db():
+    global _initialized
+    if _initialized:
+        return
     _ensure_database_exists()
     _init_engine()
     from app.db import models  # noqa
@@ -118,11 +123,12 @@ def init_db():
             pass
     Base.metadata.create_all(bind=_engine)
     _auto_seed_demo_user()
+    _initialized = True
     _log.info("All tables created/verified.")
 
 @contextmanager
 def get_db():
-    _init_engine()
+    init_db()
     db = _SessionLocal()
     try:
         yield db

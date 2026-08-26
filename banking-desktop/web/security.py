@@ -18,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 def get_db():
-    session_module._init_engine()
+    session_module.init_db()
     db = session_module._SessionLocal()
     try:
         yield db

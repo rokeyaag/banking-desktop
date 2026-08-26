@@ -88,7 +88,8 @@ def _auto_seed_demo_user():
         from app.db.models import User, Account, AccountType
         from app.security.hashing import hash_password
         from app.services.pin_service import set_pin
-        with get_db() as db:
+        db = _SessionLocal()
+        try:
             admin = db.query(User).filter(User.email == "admin@nexabank.com").first()
             if not admin:
                 user = User(
@@ -107,6 +108,8 @@ def _auto_seed_demo_user():
                 db.add_all([acc1, acc2])
                 db.commit()
                 _log.info("Demo user seeded successfully.")
+        finally:
+            db.close()
     except Exception as e:
         _log.warning(f"Demo user auto-seed notice: {e}")
 
@@ -116,6 +119,7 @@ def init_db():
     global _initialized, _engine, _SessionLocal
     if _initialized:
         return
+    _initialized = True
     _init_engine()
     _ensure_database_exists()
     from app.db import models  # noqa
@@ -138,7 +142,6 @@ def init_db():
         Base.metadata.create_all(bind=_engine)
 
     _auto_seed_demo_user()
-    _initialized = True
     _log.info("All tables created/verified.")
 
 @contextmanager

@@ -3,39 +3,26 @@ from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, Text, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 import enum
 from app.db.session import Base
 
 class GUID(TypeDecorator):
-    impl = CHAR
+    impl = CHAR(36)
     cache_ok = True
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
-            return dialect.type_descriptor(PG_UUID(as_uuid=True))
-        else:
-            return dialect.type_descriptor(CHAR(36))
 
     def process_bind_param(self, value, dialect):
         if value is None:
-            return value
-        elif dialect.name == 'postgresql':
+            return None
+        if isinstance(value, uuid.UUID):
             return str(value)
-        else:
-            if not isinstance(value, uuid.UUID):
-                return str(uuid.UUID(str(value)))
-            else:
-                return str(value)
+        return str(uuid.UUID(str(value)))
 
     def process_result_value(self, value, dialect):
         if value is None:
+            return None
+        if isinstance(value, uuid.UUID):
             return value
-        else:
-            if not isinstance(value, uuid.UUID):
-                return uuid.UUID(str(value))
-            else:
-                return value
+        return uuid.UUID(str(value))
 
 def UUID(as_uuid=True):
     return GUID()

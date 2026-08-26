@@ -78,8 +78,8 @@ def _try_pgvector() -> bool:
 def _auto_seed_demo_user():
     try:
         from app.db.models import User, Account, AccountType
-        from app.services.auth_service import hash_password
-        from app.services.pin_service import set_user_pin
+        from app.security.hashing import hash_password
+        from app.services.pin_service import set_pin
         with get_db() as db:
             admin = db.query(User).filter(User.email == "admin@nexabank.com").first()
             if not admin:
@@ -93,7 +93,7 @@ def _auto_seed_demo_user():
                 )
                 db.add(user)
                 db.flush()
-                set_user_pin(db, user.id, "1234")
+                set_pin(db, user.id, "1234")
                 acc1 = Account(user_id=user.id, account_number="100123456789", account_type=AccountType.CHECKING, balance=5000.0)
                 acc2 = Account(user_id=user.id, account_number="200987654321", account_type=AccountType.SAVINGS, balance=12000.0)
                 db.add_all([acc1, acc2])

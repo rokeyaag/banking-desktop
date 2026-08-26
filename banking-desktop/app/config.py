@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    DB_HOST: str = os.getenv("DB_HOST", "localhost")
+    DB_HOST: str = os.getenv("DB_HOST", "")
     DB_PORT: int = int(os.getenv("DB_PORT", 5432))
     DB_NAME: str = os.getenv("DB_NAME", "nexabank")
     DB_USER: str = os.getenv("DB_USER", "postgres")
@@ -23,13 +23,14 @@ class Config:
             elif url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
                 url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
             return url
-        # If on Linux / Vercel / AWS Lambda without an external DB URL, use SQLite in /tmp
-        if os.name != 'nt' or os.getenv("VERCEL") or os.getenv("LAMBDA_TASK_ROOT"):
-            return "sqlite:////tmp/nexabank.db"
-        return (
-            f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}"
-            f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
-        )
+        if cls.DB_HOST and cls.DB_HOST not in ["localhost", "127.0.0.1"]:
+            return (
+                f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}"
+                f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"
+            )
+        if os.name == 'nt':
+            return f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}@localhost:{cls.DB_PORT}/{cls.DB_NAME}"
+        return "sqlite:////tmp/nexabank.db"
 
     OLLAMA_BASE_URL: str  = os.getenv("OLLAMA_BASE_URL",  "http://localhost:11434")
     OLLAMA_CHAT_MODEL: str  = os.getenv("OLLAMA_CHAT_MODEL",  "gemma3:1b")

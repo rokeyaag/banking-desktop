@@ -16,23 +16,25 @@ def _init_engine():
     from app.config import config
     db_url = config.get_db_url()
 
-    if "sqlite" in db_url or (os.name != 'nt' and not config.DATABASE_URL):
-        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
-        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
-    else:
+    is_sqlite = "sqlite" in db_url
+    if not is_sqlite:
         try:
-            _engine = create_engine(
+            test_engine = create_engine(
                 db_url,
                 pool_size=5, max_overflow=10,
                 pool_pre_ping=True, echo=False,
-                connect_args={"connect_timeout": 3}
+                connect_args={"connect_timeout": 2}
             )
-            with _engine.connect() as conn:
+            with test_engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
+            _engine = test_engine
         except Exception as e:
-            _log.warning(f"Database connection to '{db_url}' failed: {e}. Falling back to SQLite.")
-            fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
-            _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+            _log.warning(f"Database connection failed ({e}). Switching to SQLite fallback.")
+            is_sqlite = True
+
+    if is_sqlite or _engine is None:
+        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
+        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
 
     _SessionLocal = sessionmaker(
         autocommit=False, autoflush=False,
@@ -45,18 +47,18 @@ def get_engine():
     return _engine
 
 def _ensure_database_exists():
-    from app.config import config
-    db_url = config.get_db_url()
-    if "sqlite" in db_url or ("localhost" in db_url and os.name != 'nt'):
-        return
     try:
+        from app.config import config
+        db_url = config.get_db_url()
+        if "sqlite" in db_url or not config.DB_HOST or (config.DB_HOST in ["localhost", "127.0.0.1"] and os.name != 'nt'):
+            return
         import psycopg2
         from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         conn = psycopg2.connect(
             host=config.DB_HOST, port=config.DB_PORT,
             user=config.DB_USER, password=config.DB_PASSWORD,
             dbname="postgres",
-            connect_timeout=3
+            connect_timeout=2
         )
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor()
@@ -70,10 +72,10 @@ def _ensure_database_exists():
         _log.warning(f"DB ensure warning: {e}")
 
 def _try_pgvector() -> bool:
-    from app.config import config
-    if "sqlite" in config.get_db_url():
-        return False
     try:
+        from app.config import config
+        if "sqlite" in config.get_db_url() or not _engine:
+            return False
         with _engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             conn.commit()
@@ -111,14 +113,13 @@ def _auto_seed_demo_user():
 _initialized = False
 
 def init_db():
-    global _initialized
+    global _initialized, _engine, _SessionLocal
     if _initialized:
         return
     _init_engine()
     _ensure_database_exists()
     from app.db import models  # noqa
     if not _try_pgvector():
-        _log.warning("pgvector unavailable — embedding column will be Text")
         try:
             from sqlalchemy import Text
             from app.db.models import DocumentChunk
@@ -127,7 +128,15 @@ def init_db():
                 col.type = Text()
         except Exception:
             pass
-    Base.metadata.create_all(bind=_engine)
+    try:
+        Base.metadata.create_all(bind=_engine)
+    except Exception as e:
+        _log.warning(f"create_all notice ({e}). Fallback to SQLite.")
+        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
+        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+        _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine, expire_on_commit=False)
+        Base.metadata.create_all(bind=_engine)
+
     _auto_seed_demo_user()
     _initialized = True
     _log.info("All tables created/verified.")

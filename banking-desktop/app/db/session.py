@@ -108,8 +108,8 @@ def init_db():
     global _initialized
     if _initialized:
         return
-    _ensure_database_exists()
     _init_engine()
+    _ensure_database_exists()
     from app.db import models  # noqa
     if not _try_pgvector():
         _log.warning("pgvector unavailable — embedding column will be Text")

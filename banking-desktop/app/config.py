@@ -20,8 +20,8 @@ class Config:
             elif url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
                 url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
             return url
-        # On Vercel / serverless environment, use SQLite in /tmp
-        if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        # If on Vercel / serverless / Linux with localhost, use SQLite in /tmp
+        if os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or (os.name != "nt" and cls.DB_HOST in ["localhost", "127.0.0.1"]):
             return "sqlite:////tmp/nexabank.db"
         return (
             f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}"

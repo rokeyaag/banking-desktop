@@ -1,3 +1,4 @@
+import os, sys
 import logging
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -14,22 +15,24 @@ def _init_engine():
         return
     from app.config import config
     db_url = config.get_db_url()
-    try:
-        if "sqlite" in db_url:
-            _engine = create_engine(db_url, connect_args={"check_same_thread": False})
-        else:
+
+    if "sqlite" in db_url or (os.name != 'nt' and not config.DATABASE_URL):
+        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
+        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+    else:
+        try:
             _engine = create_engine(
                 db_url,
                 pool_size=5, max_overflow=10,
                 pool_pre_ping=True, echo=False,
+                connect_args={"connect_timeout": 3}
             )
-            # Test connection
             with _engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-    except Exception as e:
-        _log.warning(f"Database connection to '{db_url}' failed ({e}). Falling back to local SQLite.")
-        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
-        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+        except Exception as e:
+            _log.warning(f"Database connection to '{db_url}' failed: {e}. Falling back to SQLite.")
+            fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
+            _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
 
     _SessionLocal = sessionmaker(
         autocommit=False, autoflush=False,

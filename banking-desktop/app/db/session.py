@@ -47,7 +47,7 @@ def get_engine():
 def _ensure_database_exists():
     from app.config import config
     db_url = config.get_db_url()
-    if "sqlite" in db_url:
+    if "sqlite" in db_url or ("localhost" in db_url and os.name != 'nt'):
         return
     try:
         import psycopg2
@@ -70,6 +70,9 @@ def _ensure_database_exists():
         _log.warning(f"DB ensure warning: {e}")
 
 def _try_pgvector() -> bool:
+    from app.config import config
+    if "sqlite" in config.get_db_url():
+        return False
     try:
         with _engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))

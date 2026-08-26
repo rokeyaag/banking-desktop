@@ -15,13 +15,16 @@ class Config:
     def get_db_url(cls) -> str:
         if cls.DATABASE_URL:
             url = cls.DATABASE_URL
+            if "localhost" in url or "127.0.0.1" in url:
+                if os.name != 'nt':
+                    return "sqlite:////tmp/nexabank.db"
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql+psycopg2://", 1)
             elif url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
                 url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
             return url
-        # If on Vercel / AWS Lambda / Linux without an explicit remote DB, use SQLite in /tmp
-        if os.getenv("VERCEL") or os.getenv("LAMBDA_TASK_ROOT") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or (os.name != 'nt' and not cls.DATABASE_URL):
+        # If on Linux / Vercel / AWS Lambda without an external DB URL, use SQLite in /tmp
+        if os.name != 'nt' or os.getenv("VERCEL") or os.getenv("LAMBDA_TASK_ROOT"):
             return "sqlite:////tmp/nexabank.db"
         return (
             f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}"

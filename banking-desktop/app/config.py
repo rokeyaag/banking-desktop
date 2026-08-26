@@ -8,10 +8,18 @@ class Config:
     DB_PORT: int = int(os.getenv("DB_PORT", 5432))
     DB_NAME: str = os.getenv("DB_NAME", "nexabank")
     DB_USER: str = os.getenv("DB_USER", "postgres")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "lutfor123")
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "postgres")
+    DATABASE_URL: str = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_PRISMA_URL") or ""
 
     @classmethod
     def get_db_url(cls) -> str:
+        if cls.DATABASE_URL:
+            url = cls.DATABASE_URL
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+            elif url.startswith("postgresql://") and not url.startswith("postgresql+psycopg2://"):
+                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            return url
         return (
             f"postgresql+psycopg2://{cls.DB_USER}:{cls.DB_PASSWORD}"
             f"@{cls.DB_HOST}:{cls.DB_PORT}/{cls.DB_NAME}"

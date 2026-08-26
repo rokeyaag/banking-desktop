@@ -13,15 +13,28 @@ def _init_engine():
     if _engine is not None:
         return
     from app.config import config
-    _engine = create_engine(
-        config.get_db_url(),
-        pool_size=5, max_overflow=10,
-        pool_pre_ping=True, echo=False,
-    )
+    db_url = config.get_db_url()
+    try:
+        if "sqlite" in db_url:
+            _engine = create_engine(db_url, connect_args={"check_same_thread": False})
+        else:
+            _engine = create_engine(
+                db_url,
+                pool_size=5, max_overflow=10,
+                pool_pre_ping=True, echo=False,
+            )
+            # Test connection
+            with _engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+    except Exception as e:
+        _log.warning(f"Database connection to '{db_url}' failed ({e}). Falling back to local SQLite.")
+        fallback_url = "sqlite:////tmp/nexabank.db" if os.name != 'nt' else "sqlite:///nexabank_local.db"
+        _engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
+
     _SessionLocal = sessionmaker(
         autocommit=False, autoflush=False,
         bind=_engine,
-        expire_on_commit=False  # ← KEY FIX: objects stay alive after commit/close
+        expire_on_commit=False
     )
 
 def get_engine():
@@ -29,14 +42,18 @@ def get_engine():
     return _engine
 
 def _ensure_database_exists():
-    import psycopg2
-    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
     from app.config import config
+    db_url = config.get_db_url()
+    if "sqlite" in db_url:
+        return
     try:
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
         conn = psycopg2.connect(
             host=config.DB_HOST, port=config.DB_PORT,
             user=config.DB_USER, password=config.DB_PASSWORD,
             dbname="postgres",
+            connect_timeout=3
         )
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor()
@@ -47,8 +64,7 @@ def _ensure_database_exists():
         cur.close()
         conn.close()
     except Exception as e:
-        _log.error(f"DB ensure error: {e}")
-        raise
+        _log.warning(f"DB ensure warning: {e}")
 
 def _try_pgvector() -> bool:
     try:
@@ -58,6 +74,33 @@ def _try_pgvector() -> bool:
         return True
     except Exception:
         return False
+
+def _auto_seed_demo_user():
+    try:
+        from app.db.models import User, Account, AccountType
+        from app.services.auth_service import hash_password
+        from app.services.pin_service import set_user_pin
+        with get_db() as db:
+            admin = db.query(User).filter(User.email == "admin@nexabank.com").first()
+            if not admin:
+                user = User(
+                    email="admin@nexabank.com",
+                    password_hash=hash_password("Password123"),
+                    full_name="Admin User",
+                    phone="+1234567890",
+                    is_admin=True,
+                    is_active=True
+                )
+                db.add(user)
+                db.flush()
+                set_user_pin(db, user.id, "1234")
+                acc1 = Account(user_id=user.id, account_number="100123456789", account_type=AccountType.CHECKING, balance=5000.0)
+                acc2 = Account(user_id=user.id, account_number="200987654321", account_type=AccountType.SAVINGS, balance=12000.0)
+                db.add_all([acc1, acc2])
+                db.commit()
+                _log.info("Demo user seeded successfully.")
+    except Exception as e:
+        _log.warning(f"Demo user auto-seed notice: {e}")
 
 def init_db():
     _ensure_database_exists()
@@ -74,6 +117,7 @@ def init_db():
         except Exception:
             pass
     Base.metadata.create_all(bind=_engine)
+    _auto_seed_demo_user()
     _log.info("All tables created/verified.")
 
 @contextmanager

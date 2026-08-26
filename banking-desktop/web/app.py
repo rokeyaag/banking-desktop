@@ -14,11 +14,21 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.db.session import init_db
 from web.routers import auth, accounts, transactions, loans, ai
 
+import traceback
+from fastapi.responses import JSONResponse
+
 app = FastAPI(
     title="NexaBank Web Application",
     description="Next-generation intelligent banking platform with AI assistant & multi-account financial management.",
     version="2.0.0"
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()}
+    )
 
 # CORS
 app.add_middleware(

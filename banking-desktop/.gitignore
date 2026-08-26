@@ -7,3 +7,4 @@ logs/
 uploads/
 .idea/
 *.iml
+cloudflared.exe

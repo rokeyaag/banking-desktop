@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexaBank | Online Banking Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#070b14',
+                        cardBg: '#0f172a',
+                        cardBorder: '#1e293b',
+                        brandCyan: '#06b6d4',
+                        brandIndigo: '#6366f1',
+                        brandEmerald: '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #070b14; }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .glass-card:hover { border-color: rgba(6, 182, 212, 0.3); }
+        .active-nav {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border-left: 3px solid #06b6d4;
+            color: #38bdf8 !important;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #070b14; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-950/80 border-r border-slate-800/80 flex flex-col justify-between flex-shrink-0 z-20 backdrop-blur-xl">
+        <div>
+            <div class="p-6 flex items-center gap-3 border-b border-slate-800/60">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <i data-lucide="landmark" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        NexaBank
+                    </h1>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/40">
+                        Web Edition
+                    </span>
+                </div>
+            </div>
+
+            <nav class="p-4 space-y-1.5">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all active-nav">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="navigate('accounts')" id="nav-accounts" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all">
+                    <i data-lucide="credit-card" class="w-5 h-5"></i>
+                    <span>My Accounts</span>
+                </button>
+                <button onclick="navigate('transfer')" id="nav-transfer" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all">
+                    <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+                    <span>Transfer Funds</span>
+                </button>
+                <button onclick="navigate('deposit')" id="nav-deposit" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all">
+                    <i data-lucide="arrow-down-to-dot" class="w-5 h-5"></i>
+                    <span>Deposit & Withdraw</span>
+                </button>
+                <button onclick="navigate('loans')" id="nav-loans" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all">
+                    <i data-lucide="badge-percent" class="w-5 h-5"></i>
+                    <span>Loans & Credit</span>
+                </button>
+                <button onclick="navigate('ai')" id="nav-ai" class="w-full flex items-center gap-3.5 px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-900/60 transition-all">
+                    <i data-lucide="bot" class="w-5 h-5 text-cyan-400"></i>
+                    <span class="flex items-center gap-2">
+                        AI Assistant
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    </span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-slate-800/60">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900/50 border border-slate-800/40">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white text-xs flex-shrink-0" id="user-avatar">
+                        NB
+                    </div>
+                    <div class="truncate">
+                        <p class="text-xs font-bold text-slate-200 truncate" id="user-name-sidebar">Loading...</p>
+                        <p class="text-[11px] text-slate-400 truncate" id="user-email-sidebar">...</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" title="Sign Out" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <header class="h-16 bg-slate-950/40 border-b border-slate-800/60 px-8 flex items-center justify-between backdrop-blur-md z-10">
+            <div class="flex items-center gap-3">
+                <h2 class="text-lg font-bold text-white tracking-tight" id="header-title">Overview</h2>
+                <div id="pin-badge" class="hidden items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> PIN Protected
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="openPinModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition-all">
+                    <i data-lucide="key-round" class="w-3.5 h-3.5 text-cyan-400"></i> Manage PIN
+                </button>
+                <button onclick="navigate('ai')" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-md shadow-cyan-500/20 flex items-center gap-2 transition-all">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Ask NexaAI
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 space-y-8" id="content-area">
+
+            <!-- DASHBOARD VIEW -->
+            <section id="view-dashboard" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider">Total Liquid Balance</span>
+                            <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-white tracking-tight" id="metric-total-balance">.00</h3>
+                        <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                            <span class="text-emerald-400 font-semibold" id="metric-accounts-count">0 Accounts</span> active
+                        </p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider">30-Day Inflow</span>
+                            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><i data-lucide="arrow-down-left" class="w-5 h-5"></i></div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-emerald-400 tracking-tight" id="metric-inflow">+.00</h3>
+                        <p class="text-xs text-slate-400 mt-2">Deposits & received transfers</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider">30-Day Outflow</span>
+                            <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400"><i data-lucide="arrow-up-right" class="w-5 h-5"></i></div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-rose-400 tracking-tight" id="metric-outflow">-.00</h3>
+                        <p class="text-xs text-slate-400 mt-2">Withdrawals & transfers sent</p>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-indigo-950/60 to-cyan-950/60 border border-cyan-500/20 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Instant Actions</span>
+                            <h4 class="text-lg font-bold text-white mt-1">Move Money Fast</h4>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="navigate('transfer')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all">
+                                Send
+                            </button>
+                            <button onclick="navigate('deposit')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-white transition-all">
+                                Deposit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i> My Accounts
+                            </h3>
+                            <button onclick="openNewAccountModal()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Open New
+                            </button>
+                        </div>
+                        <div id="dashboard-accounts-list" class="space-y-3">
+                            <div class="text-slate-500 text-sm py-4 text-center">Loading accounts...</div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 glass-card rounded-3xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                    <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> 7-Day Cashflow Analytics
+                                </h3>
+                                <p class="text-xs text-slate-400">Daily inflow vs outflow comparison</p>
+                            </div>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
+                                Real-Time Sync
+                            </span>
+                        </div>
+                        <div class="h-64 relative">
+                            <canvas id="cashflowChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i data-lucide="history" class="w-4 h-4 text-cyan-400"></i> Recent Activity
+                            </h3>
+                            <p class="text-xs text-slate-400">Latest deposits, withdrawals, and transfers</p>
+                        </div>
+                        <button onclick="refreshDashboard()" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                                    <th class="pb-3 font-semibold">Type & Account</th>
+                                    <th class="pb-3 font-semibold">Description</th>
+                                    <th class="pb-3 font-semibold">Date & Time</th>
+                                    <th class="pb-3 font-semibold text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-transactions-tbody" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="4" class="py-8 text-center text-slate-500">Loading transactions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MY ACCOUNTS VIEW -->
+            <section id="view-accounts" class="space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-white">Bank Accounts</h3>
+                        <p class="text-xs text-slate-400">Manage your checking, savings, and business accounts</p>
+                    </div>
+                    <button onclick="openNewAccountModal()" class="px-4 py-2.5 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Open New Account
+                    </button>
+                </div>
+                <div id="full-accounts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- TRANSFER FUNDS VIEW -->
+            <section id="view-transfer" class="max-w-2xl mx-auto space-y-6 hidden">
+                <div class="text-center space-y-1">
+                    <h3 class="text-2xl font-extrabold text-white">Transfer Funds</h3>
+                    <p class="text-xs text-slate-400">Fast, secure instant transfer between NexaBank accounts</p>
+                </div>
+
+                <div class="glass-card rounded-3xl p-8 space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Source Account</label>
+                        <select id="transfer-source" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500"></select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Recipient Account Number (12 Digits)</label>
+                        <input type="text" id="transfer-recipient" placeholder="e.g. 881286838612" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Transfer Amount ($ USD)</label>
+                        <input type="number" id="transfer-amount" min="1" step="any" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 font-bold text-lg text-cyan-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Note / Purpose (Optional)</label>
+                        <input type="text" id="transfer-note" placeholder="e.g. Rent, Payment, Invoice #102" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Security PIN (4–6 Digits)</label>
+                        <input type="password" id="transfer-pin" placeholder="Enter your PIN (e.g. 1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    </div>
+
+                    <button onclick="executeTransfer()" id="btn-transfer-submit" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="send" class="w-4 h-4"></i> Confirm & Send Transfer
+                    </button>
+                </div>
+            </section>
+
+            <!-- DEPOSIT & WITHDRAW VIEW -->
+            <section id="view-deposit" class="max-w-3xl mx-auto space-y-6 hidden">
+                <div class="text-center space-y-1">
+                    <h3 class="text-2xl font-extrabold text-white">Deposit & Withdrawal</h3>
+                    <p class="text-xs text-slate-400">Instant cash credit simulation or ATM withdrawal</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-card rounded-3xl p-6 space-y-4 border-emerald-500/20">
+                        <div class="flex items-center gap-3 text-emerald-400">
+                            <div class="p-2.5 rounded-xl bg-emerald-500/10"><i data-lucide="arrow-down-circle" class="w-6 h-6"></i></div>
+                            <h4 class="text-lg font-bold text-white">Deposit Funds</h4>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Select Account</label>
+                            <select id="deposit-account" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Amount ($)</label>
+                            <input type="number" id="deposit-amount" min="1" placeholder="100.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Security PIN</label>
+                            <input type="password" id="deposit-pin" placeholder="1234" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <button onclick="handleDeposit()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all">
+                            Confirm Deposit
+                        </button>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-6 space-y-4 border-rose-500/20">
+                        <div class="flex items-center gap-3 text-rose-400">
+                            <div class="p-2.5 rounded-xl bg-rose-500/10"><i data-lucide="arrow-up-circle" class="w-6 h-6"></i></div>
+                            <h4 class="text-lg font-bold text-white">Withdraw Funds</h4>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Select Account</label>
+                            <select id="withdraw-account" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Amount ($)</label>
+                            <input type="number" id="withdraw-amount" min="1" placeholder="50.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white font-bold text-rose-400 focus:outline-none focus:border-rose-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Security PIN</label>
+                            <input type="password" id="withdraw-pin" placeholder="1234" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500">
+                        </div>
+                        <button onclick="handleWithdraw()" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg shadow-rose-600/20 transition-all">
+                            Confirm Withdrawal
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LOANS & CREDIT VIEW -->
+            <section id="view-loans" class="space-y-8 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="glass-card rounded-3xl p-6 space-y-5">
+                        <div>
+                            <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-5 h-5 text-cyan-400"></i> Smart EMI Calculator & Apply
+                            </h4>
+                            <p class="text-xs text-slate-400">Interest starting from 8.5% p.a.</p>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+                                <span>Loan Amount: $<span id="calc-amount-label">5,000</span></span>
+                            </div>
+                            <input type="range" id="loan-amount-range" min="500" max="50000" step="500" value="5000" oninput="updateLoanCalc()" class="w-full accent-cyan-400">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1.5">
+                                <span>Tenure: <span id="calc-tenure-label">12</span> Months</span>
+                            </div>
+                            <input type="range" id="loan-tenure-range" min="3" max="60" step="3" value="12" oninput="updateLoanCalc()" class="w-full accent-cyan-400">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Loan Purpose</label>
+                            <input type="text" id="loan-purpose" placeholder="e.g. Business expansion, Education, Home repair" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Monthly EMI</span>
+                                <span class="text-base font-extrabold text-cyan-400" id="calc-emi">.10</span>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Total Interest</span>
+                                <span class="text-base font-extrabold text-slate-300" id="calc-interest">.20</span>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Total Payable</span>
+                                <span class="text-base font-extrabold text-slate-300" id="calc-total">,233.20</span>
+                            </div>
+                        </div>
+
+                        <button onclick="applyLoan()" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i> Apply for Loan Instantly
+                        </button>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-6 space-y-4">
+                        <div>
+                            <h4 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i data-lucide="file-text" class="w-5 h-5 text-cyan-400"></i> My Active Loans
+                            </h4>
+                            <p class="text-xs text-slate-400">Track outstanding balance and make repayments</p>
+                        </div>
+                        <div id="active-loans-list" class="space-y-3">
+                            <div class="text-slate-500 text-sm py-4 text-center">Loading loans...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI ASSISTANT VIEW -->
+            <section id="view-ai" class="max-w-4xl mx-auto space-y-4 hidden h-[calc(100vh-180px)] flex flex-col">
+                <div class="glass-card rounded-3xl p-4 flex items-center justify-between border-cyan-500/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                            <i data-lucide="bot" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">NexaAI Financial Assistant</h3>
+                            <p class="text-xs text-cyan-400 flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online & RAG-Enabled
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="insertAiPrompt('How do I transfer money between accounts?')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 hidden sm:block">
+                            Transfer help
+                        </button>
+                        <button onclick="insertAiPrompt('What are the loan interest rates and tenure?')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 hidden sm:block">
+                            Loan policies
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ai-chat-messages" class="flex-1 glass-card rounded-3xl p-6 overflow-y-auto space-y-4 border border-slate-800">
+                    <div class="flex items-start gap-3 max-w-2xl">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i data-lucide="bot" class="w-4 h-4"></i>
+                        </div>
+                        <div class="p-4 rounded-2xl rounded-tl-none bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed shadow-lg">
+                            Hello! I am **NexaAI**, your personal banking assistant. Ask me anything about your account balances, transfer limits, loan interest rates, security PIN, or banking policies.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-2 flex items-center gap-2 border-slate-700">
+                    <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendAiMessage()" placeholder="Ask NexaAI anything about your banking..." class="flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none">
+                    <button onclick="sendAiMessage()" id="btn-ai-send" class="p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/20 transition-all">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-pin" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card bg-slate-950 rounded-3xl p-6 w-full max-w-sm space-y-4 border border-slate-700 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h4 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="key-round" class="w-4 h-4 text-cyan-400"></i> Set Security PIN
+                </h4>
+                <button onclick="closePinModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">Your 4–6 digit PIN is required to authorize deposits, withdrawals, and transfers.</p>
+            <input type="password" id="modal-pin-input" maxlength="6" placeholder="Enter 4-6 digits" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-cyan-500">
+            <button onclick="savePin()" class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition-all">
+                Save PIN
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-new-account" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card bg-slate-950 rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-700 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h4 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="credit-card" class="w-4 h-4 text-cyan-400"></i> Open New Bank Account
+                </h4>
+                <button onclick="closeNewAccountModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Account Type</label>
+                <select id="new-account-type" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+                    <option value="CHECKING">Checking Account</option>
+                    <option value="SAVINGS">High-Yield Savings Account</option>
+                    <option value="BUSINESS">Business Account</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Initial Deposit ($)</label>
+                <input type="number" id="new-account-deposit" min="0" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <button onclick="submitNewAccount()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl transition-all">
+                Create Account
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-repay-loan" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-card bg-slate-950 rounded-3xl p-6 w-full max-w-md space-y-4 border border-slate-700 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h4 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="badge-percent" class="w-4 h-4 text-cyan-400"></i> Repay Loan Installment
+                </h4>
+                <button onclick="closeRepayModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <input type="hidden" id="repay-loan-id">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Pay From Account</label>
+                <select id="repay-source-account" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"></select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Amount to Pay ($)</label>
+                <input type="number" id="repay-amount" min="1" step="any" placeholder="0.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white font-bold text-cyan-400 focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Security PIN</label>
+                <input type="password" id="repay-pin" placeholder="1234" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+            </div>
+            <button onclick="submitRepayment()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all">
+                Authorize Repayment
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

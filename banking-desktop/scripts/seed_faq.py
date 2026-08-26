@@ -27,7 +27,9 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = OVERLAP) -> lis
 
 def get_embedding(text: str) -> list[float] | None:
     try:
-        from app.llm.ollama_client import get_embedding as _emb
+        from app.llm.ollama_client import get_embedding as _emb, is_ollama_available
+        if not is_ollama_available():
+            return None
         return _emb(text)
     except Exception as e:
         print(f"  ⚠ Embedding failed: {e}")
@@ -86,9 +88,11 @@ def main():
 
         # Embed and save
         print("🤖 Generating embeddings (this may take a minute)...")
+        from app.llm.ollama_client import is_ollama_available
+        ollama_ok = is_ollama_available()
         success = 0
         for i, chunk_text_val in enumerate(chunks):
-            emb = get_embedding(chunk_text_val)
+            emb = get_embedding(chunk_text_val) if ollama_ok else None
             c = DocumentChunk(
                 document_id = doc.id,
                 user_id     = user_id,
